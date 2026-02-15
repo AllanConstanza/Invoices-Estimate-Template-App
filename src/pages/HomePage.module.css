@@ -101,3 +101,29 @@
   font-weight: 700;
   color: #222;
 }
+
+.searchWrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.search {
+  width: 100%;
+  max-width: 560px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.12);
+  outline: none;
+  font-size: 14px;
+  background: white;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #666;
+}

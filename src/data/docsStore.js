@@ -1,34 +1,74 @@
-// Super simple in-memory store. Will later replace with Firestore.
-const docs = new Map();
+// src/data/docsStore.js
+import { getTemplateById } from "./templates";
 
+const STORAGE_KEY = "invoice_app_docs_v1";
+const COUNTERS_KEY = "invoice_app_counters_v1";
+
+// docs in memory
+const docs = new Map(loadDocsFromStorage().map((d) => [d.id, d]));
+const counters = loadCounters();
+
+// ---------- public API ----------
 export function createDocFromTemplate({ industry, templateId, language = "en" }) {
-  const id = crypto.randomUUID();
+  const template = getTemplateById(templateId);
+  if (!template) throw new Error(`Template not found: ${templateId}`);
 
-  const now = new Date().toISOString();
+  const id = crypto.randomUUID();
+  const now = new Date();
+  const nowIso = now.toISOString();
+
+  const docType = template.docType; // estimate | invoice
+  const number = nextNumber(docType);
+
+  const titleBase = template.defaults.title?.[language] ?? template.defaults.title?.en ?? "Document";
 
   const doc = {
     id,
     industry,
     templateId,
     language,
+    docType, // "estimate" | "invoice"
     status: "draft",
-    title: defaultTitle(industry, templateId, language),
-    createdAt: now,
-    lastEditedAt: now,
+
+    title: `${titleBase} #${number}`,
+
+    meta: {
+      estimateNumber: docType === "estimate" ? number : "",
+      invoiceNumber: docType === "invoice" ? number : "",
+      issueDate: toDateInputValue(now),
+      dueDate: docType === "invoice" ? addDaysDateInput(now, 15) : "",
+    },
+
+    show: { ...template.defaults.show },
+
+    createdAt: nowIso,
+    lastEditedAt: nowIso,
+
     client: {
       name: "",
       phone: "",
       email: "",
       address: "",
     },
-    lineItems: [
-      { id: crypto.randomUUID(), name: "Service item", qty: 1, rate: 100 },
-    ],
-    notes: defaultNotes(language),
-    terms: defaultTerms(language),
+
+    job: {
+      address: "",
+      description: "",
+    },
+
+    lineItems: (template.defaults.lineItems || []).map((li) => ({
+      id: crypto.randomUUID(),
+      name: li.name?.[language] ?? li.name?.en ?? "Item",
+      qty: li.qty ?? 1,
+      rate: li.rate ?? 0,
+    })),
+
+    notes: template.defaults.notes?.[language] ?? template.defaults.notes?.en ?? "",
+    terms: template.defaults.terms?.[language] ?? template.defaults.terms?.en ?? "",
   };
 
   docs.set(id, doc);
+  saveToStorage();
   return doc;
 }
 
@@ -47,27 +87,70 @@ export function updateDoc(docId, patch) {
   };
 
   docs.set(docId, updated);
+  saveToStorage();
   return updated;
 }
 
-function defaultTitle(industry, templateId, language) {
-  const industryLabel = industry.replaceAll("-", " ");
-  if (language === "es") return `Estimado — ${capitalize(industryLabel)}`;
-  return `Estimate — ${capitalize(industryLabel)}`;
+export function listDocs() {
+  return Array.from(docs.values()).sort(
+    (a, b) => new Date(b.lastEditedAt) - new Date(a.lastEditedAt)
+  );
 }
 
-function defaultNotes(language) {
-  return language === "es"
-    ? "Gracias por su preferencia."
-    : "Thank you for your business.";
+export function deleteDoc(docId) {
+  docs.delete(docId);
+  saveToStorage();
 }
 
-function defaultTerms(language) {
-  return language === "es"
-    ? "Pago debido dentro de 15 días."
-    : "Payment due within 15 days.";
+// ---------- storage helpers ----------
+function saveToStorage() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(docs.values())));
+  localStorage.setItem(COUNTERS_KEY, JSON.stringify(counters));
 }
 
-function capitalize(s) {
-  return s.length ? s[0].toUpperCase() + s.slice(1) : s;
+function loadDocsFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function loadCounters() {
+  try {
+    const raw = localStorage.getItem(COUNTERS_KEY);
+    if (!raw) return { estimate: 0, invoice: 0 };
+    const parsed = JSON.parse(raw);
+    return {
+      estimate: Number(parsed.estimate) || 0,
+      invoice: Number(parsed.invoice) || 0,
+    };
+  } catch {
+    return { estimate: 0, invoice: 0 };
+  }
+}
+
+function nextNumber(docType) {
+  counters[docType] = (counters[docType] || 0) + 1;
+  // E-0001, I-0001
+  const prefix = docType === "estimate" ? "E" : "I";
+  const padded = String(counters[docType]).padStart(4, "0");
+  saveToStorage();
+  return `${prefix}-${padded}`;
+}
+
+function toDateInputValue(dateObj) {
+  const yyyy = dateObj.getFullYear();
+  const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const dd = String(dateObj.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function addDaysDateInput(dateObj, days) {
+  const d = new Date(dateObj);
+  d.setDate(d.getDate() + days);
+  return toDateInputValue(d);
 }

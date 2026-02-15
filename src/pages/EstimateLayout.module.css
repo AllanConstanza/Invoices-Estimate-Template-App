@@ -1,0 +1,292 @@
+/* ============================= */
+/* PAGE WRAPPER */
+/* ============================= */
+
+.page {
+  background: #e9e9e9;
+  padding: 32px 0;
+  display: flex;
+  justify-content: center;
+}
+
+/* Letter size */
+.paper {
+  width: 8.5in;
+  min-height: 11in;
+  background: white;
+  padding: 36px 44px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  font-family: Arial, Helvetica, sans-serif;
+  color: #111;
+}
+
+/* ============================= */
+/* TOP META */
+/* ============================= */
+
+.topMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 12px;
+}
+
+.pageNumber {
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ============================= */
+/* HEADER BOX */
+/* ============================= */
+
+.proposalHeaderBox {
+  border: 2px solid #111;
+  border-radius: 10px;
+  padding: 18px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.title {
+  font-size: 20px;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.logoBox {
+  border: 2px solid #111;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.companyBlock {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.metaFields {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.metaFields label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.metaFields input {
+  border: 2px solid #111;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ============================= */
+/* CLIENT / JOB INFO GRID */
+/* ============================= */
+
+.infoGridBox {
+  border: 2px solid #111;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.gridRow {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr 1fr;
+}
+
+.boxField {
+  border-right: 1px solid #111;
+  border-bottom: 1px solid #111;
+  padding: 6px 10px 8px;
+  min-height: 46px;
+  display: grid;
+  align-content: start;
+}
+
+.gridRow .boxField:last-child {
+  border-right: none;
+}
+
+.boxLabel {
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.boxValue {
+  border: none;
+  outline: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ============================= */
+/* SECTION TITLE */
+/* ============================= */
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 14px 0 6px;
+}
+
+/* ============================= */
+/* DESCRIPTION LINED BOX */
+/* ============================= */
+
+.linedWriteArea {
+  border: 2px solid #111;
+  border-radius: 8px;
+  padding: 0;
+  margin-bottom: 12px;
+}
+
+.linedTextarea {
+  width: 100%;
+  min-height: 180px;
+  border: none;
+  outline: none;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 26px;
+  resize: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 25px,
+    rgba(0, 0, 0, 0.25) 26px
+  );
+}
+
+/* ============================= */
+/* NOTES & TERMS */
+/* ============================= */
+
+.simpleBox {
+  border: 2px solid #111;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.simpleBox textarea {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  resize: none;
+}
+
+/* ============================= */
+/* TOTAL + AGREEMENT */
+/* ============================= */
+
+.totalAgreement {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.totalRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.totalBox {
+  border: 2px solid #111;
+  border-radius: 8px;
+  padding: 6px 10px;
+  min-width: 120px;
+  font-weight: 700;
+  text-align: right;
+  font-size: 14px;
+}
+
+/* ============================= */
+/* SIGNATURE AREA */
+/* ============================= */
+
+.signatureRow {
+  margin-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.signatureBlock {
+  flex: 1;
+}
+
+.signatureLine {
+  border-bottom: 2px solid #111;
+  height: 32px;
+  margin-bottom: 6px;
+}
+
+.signatureLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* ============================= */
+/* PRINT SETTINGS */
+/* ============================= */
+
+@media print {
+  body {
+    background: white;
+  }
+
+  .page {
+    padding: 0;
+  }
+
+  .paper {
+    box-shadow: none;
+    margin: 0;
+    width: 100%;
+  }
+
+  .proposalHeaderBox,
+  .infoGridBox {
+    break-inside: avoid;
+  }
+}
+
+/* ============================= */
+/* RESPONSIVE */
+/* ============================= */
+
+@media (max-width: 900px) {
+  .paper {
+    width: 100%;
+    padding: 24px;
+  }
+
+  .gridRow {
+    grid-template-columns: 1fr;
+  }
+
+  .signatureRow {
+    flex-direction: column;
+  }
+}
