@@ -1,18 +1,53 @@
-# Invoice Template App
+# Invoice & Estimate Template App
 
-A bilingual invoice and estimate web application built with React and Firebase.
+A web app for creating, editing, and printing professional invoices and estimates. Built for service businesses — construction, cleaning, painting, and more.
 
 ## Features
-- Industry-based templates (Construction, Cleaning, Painting, etc.)
-- Dynamic document creation
-- Google Docs-style editable invoice layout
-- Modular CSS architecture
-- Routing-based template system
-- Extensible data model for Firestore integration
+
+- Industry-specific templates (Construction active; others coming soon)
+- Two document types: **Estimate** and **Invoice**
+- Inline editing directly on the document — no separate form
+- Print to PDF via browser print dialog
+- Document list with search
+- Move to Trash / restore / delete forever
+- Bilingual template support (English / Spanish)
+- Company logo upload
 
 ## Tech Stack
-- React
-- React Router
-- CSS Modules
-- Vite
-- (Planned) Firebase Auth + Firestore
+
+| Tool | Role |
+|---|---|
+| **Next.js** (App Router) | Framework — routing, SSR, file-based pages |
+| **React 19** | UI |
+| **Tailwind CSS v4** | Styling |
+| **localStorage** | Document persistence (client-side) |
+| **Firebase** | Planned — auth + cloud storage |
+
+## Getting Started
+
+```bash
+npm install
+npm run dev       # localhost:3000
+```
+
+```bash
+npm run build     # production build
+npm run start     # serve production build
+```
+
+## Project Structure
+
+```
+app/
+  home/             → document list
+  templates/        → industry picker
+  templates/[industry]/  → templates for an industry
+  editor/[docId]/   → edit a document
+  trash/            → recently deleted
+
+src/
+  components/       → EstimateLayout (shared)
+  data/
+    docsStore.js    → CRUD + localStorage
+    templates.js    → template definitions
+```

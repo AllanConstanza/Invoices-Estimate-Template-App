@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+:root {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: #111;
+  background: #f7f7f8;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+
+/* ── Print styles ──────────────────────────────────────── */
+@page {
+  size: Letter;
+  margin: 0.55in;
+}
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  html, body {
+    background: white !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  input, textarea {
+    background: transparent !important;
+    -webkit-text-fill-color: #111 !important;
+  }
+  .print-avoid-break {
+    break-inside: avoid;
+  }
+}
+
+/* ── Lined textarea (cannot be expressed as Tailwind class) */
+.lined-textarea {
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 25px,
+    rgba(0, 0, 0, 0.08) 25px,
+    rgba(0, 0, 0, 0.08) 26px
+  );
+  line-height: 26px;
+}

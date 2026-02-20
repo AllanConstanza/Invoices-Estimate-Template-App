@@ -92,9 +92,34 @@ export function updateDoc(docId, patch) {
 }
 
 export function listDocs() {
-  return Array.from(docs.values()).sort(
-    (a, b) => new Date(b.lastEditedAt) - new Date(a.lastEditedAt)
-  );
+  return Array.from(docs.values())
+    .filter((d) => !d.deletedAt)
+    .sort((a, b) => new Date(b.lastEditedAt) - new Date(a.lastEditedAt));
+}
+
+export function listDeletedDocs() {
+  return Array.from(docs.values())
+    .filter((d) => Boolean(d.deletedAt))
+    .sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
+}
+
+export function softDeleteDoc(docId) {
+  const existing = docs.get(docId);
+  if (!existing) return null;
+  const updated = { ...existing, deletedAt: new Date().toISOString(), lastEditedAt: new Date().toISOString() };
+  docs.set(docId, updated);
+  saveToStorage();
+  return updated;
+}
+
+export function restoreDoc(docId) {
+  const existing = docs.get(docId);
+  if (!existing) return null;
+  const { deletedAt, ...rest } = existing;
+  const updated = { ...rest, lastEditedAt: new Date().toISOString() };
+  docs.set(docId, updated);
+  saveToStorage();
+  return updated;
 }
 
 export function deleteDoc(docId) {
