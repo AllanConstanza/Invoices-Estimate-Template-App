@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   GoogleAuthProvider,
 } from 'firebase/auth'
 import { auth } from '../../src/lib/firebase'
@@ -28,17 +27,6 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && user) router.replace('/home')
   }, [user, loading, router])
-
-  // Handle return from Google redirect
-  useEffect(() => {
-    getRedirectResult(auth).then((result) => {
-      if (result?.user) router.replace('/home')
-    }).catch((err) => {
-      if (err.code !== 'auth/cancelled-popup-request') {
-        setError(friendlyError(err.code))
-      }
-    })
-  }, [])
 
   const handleEmailAuth = async (e) => {
     e.preventDefault()
@@ -62,9 +50,13 @@ export default function LoginPage() {
     setError('')
     setSubmitting('google')
     try {
-      await signInWithRedirect(auth, googleProvider)
+      await signInWithPopup(auth, googleProvider)
+      router.replace('/home')
     } catch (err) {
-      setError(friendlyError(err.code))
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError(friendlyError(err.code))
+      }
+    } finally {
       setSubmitting('')
     }
   }
