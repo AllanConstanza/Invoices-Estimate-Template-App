@@ -1,12 +1,67 @@
 // src/data/docsStore.js
 import { getTemplateById } from "./templates";
+import { db } from "../lib/firebase";
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc as fsGetDoc,
+  setDoc,
+  deleteDoc as fsDeleteDoc,
+} from "firebase/firestore";
 
 const STORAGE_KEY = "invoice_app_docs_v1";
 const COUNTERS_KEY = "invoice_app_counters_v1";
 
-// docs in memory
+// In-memory cache — source of truth for all synchronous UI reads
 const docs = new Map(loadDocsFromStorage().map((d) => [d.id, d]));
 const counters = loadCounters();
+
+// Current authenticated user UID (null when signed out)
+let currentUid = null;
+
+// ---------- Firestore init (called once per login) ----------
+export async function initStore(uid) {
+  currentUid = uid;
+  try {
+    // Load docs from Firestore
+    const snap = await getDocs(collection(db, "users", uid, "docs"));
+    docs.clear();
+    snap.forEach((d) => docs.set(d.id, d.data()));
+
+    // Load counters from Firestore
+    const cSnap = await fsGetDoc(doc(db, "users", uid, "meta", "counters"));
+    if (cSnap.exists()) {
+      const data = cSnap.data();
+      counters.estimate = Number(data.estimate) || counters.estimate;
+      counters.invoice = Number(data.invoice) || counters.invoice;
+    }
+
+    // Mirror to localStorage as offline cache
+    saveToStorage();
+  } catch (err) {
+    console.warn("Firestore load failed, falling back to localStorage:", err);
+  }
+}
+
+// ---------- Background Firestore sync (fire-and-forget) ----------
+function syncDocToFirestore(docId) {
+  if (!currentUid) return;
+  const data = docs.get(docId);
+  if (data) {
+    setDoc(doc(db, "users", currentUid, "docs", docId), data).catch(
+      (e) => console.warn("Firestore write failed:", e)
+    );
+  } else {
+    fsDeleteDoc(doc(db, "users", currentUid, "docs", docId)).catch(
+      (e) => console.warn("Firestore delete failed:", e)
+    );
+  }
+  // Sync counters alongside every write
+  setDoc(doc(db, "users", currentUid, "meta", "counters"), counters).catch(
+    (e) => console.warn("Firestore counters write failed:", e)
+  );
+}
 
 // ---------- public API ----------
 export function createDocFromTemplate({ industry, templateId, language = "en" }) {
@@ -22,12 +77,12 @@ export function createDocFromTemplate({ industry, templateId, language = "en" })
 
   const titleBase = template.defaults.title?.[language] ?? template.defaults.title?.en ?? "Document";
 
-  const doc = {
+  const newDoc = {
     id,
     industry,
     templateId,
     language,
-    docType, // "estimate" | "invoice"
+    docType,
     status: "draft",
 
     title: `${titleBase} #${number}`,
@@ -44,17 +99,8 @@ export function createDocFromTemplate({ industry, templateId, language = "en" })
     createdAt: nowIso,
     lastEditedAt: nowIso,
 
-    client: {
-      name: "",
-      phone: "",
-      email: "",
-      address: "",
-    },
-
-    job: {
-      address: "",
-      description: "",
-    },
+    client: { name: "", phone: "", email: "", address: "" },
+    job: { address: "", description: "" },
 
     lineItems: (template.defaults.lineItems || []).map((li) => ({
       id: crypto.randomUUID(),
@@ -67,9 +113,10 @@ export function createDocFromTemplate({ industry, templateId, language = "en" })
     terms: template.defaults.terms?.[language] ?? template.defaults.terms?.en ?? "",
   };
 
-  docs.set(id, doc);
+  docs.set(id, newDoc);
   saveToStorage();
-  return doc;
+  syncDocToFirestore(id);
+  return newDoc;
 }
 
 export function getDoc(docId) {
@@ -88,6 +135,7 @@ export function updateDoc(docId, patch) {
 
   docs.set(docId, updated);
   saveToStorage();
+  syncDocToFirestore(docId);
   return updated;
 }
 
@@ -106,9 +154,14 @@ export function listDeletedDocs() {
 export function softDeleteDoc(docId) {
   const existing = docs.get(docId);
   if (!existing) return null;
-  const updated = { ...existing, deletedAt: new Date().toISOString(), lastEditedAt: new Date().toISOString() };
+  const updated = {
+    ...existing,
+    deletedAt: new Date().toISOString(),
+    lastEditedAt: new Date().toISOString(),
+  };
   docs.set(docId, updated);
   saveToStorage();
+  syncDocToFirestore(docId);
   return updated;
 }
 
@@ -119,18 +172,24 @@ export function restoreDoc(docId) {
   const updated = { ...rest, lastEditedAt: new Date().toISOString() };
   docs.set(docId, updated);
   saveToStorage();
+  syncDocToFirestore(docId);
   return updated;
 }
 
 export function deleteDoc(docId) {
   docs.delete(docId);
   saveToStorage();
+  syncDocToFirestore(docId); // will delete from Firestore since doc is gone from Map
 }
 
 // ---------- storage helpers ----------
 function saveToStorage() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(docs.values())));
-  localStorage.setItem(COUNTERS_KEY, JSON.stringify(counters));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(docs.values())));
+    localStorage.setItem(COUNTERS_KEY, JSON.stringify(counters));
+  } catch {
+    // localStorage unavailable (SSR or private mode)
+  }
 }
 
 function loadDocsFromStorage() {
@@ -160,10 +219,8 @@ function loadCounters() {
 
 function nextNumber(docType) {
   counters[docType] = (counters[docType] || 0) + 1;
-  // E-0001, I-0001
   const prefix = docType === "estimate" ? "E" : "I";
   const padded = String(counters[docType]).padStart(4, "0");
-  saveToStorage();
   return `${prefix}-${padded}`;
 }
 

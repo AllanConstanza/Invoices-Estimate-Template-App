@@ -5,9 +5,10 @@
 A web-based invoicing and estimation tool for service businesses (construction, cleaning, painting, pest control). Users select an industry template, fill in company and client information directly on a document preview, and print/download as a PDF.
 
 **Core features:**
-- Industry-specific templates (construction active; others coming soon)
-- Two document types: Estimates and Invoices
+- All 4 industries active: Construction, House Cleaning, Painting, Pest Control
+- Two document types: Estimates and Invoices (each industry has both)
 - Inline Google Docs-style editing on the document
+- Add / remove line items dynamically in the invoice editor
 - Company logo upload
 - Print-to-PDF via browser print dialog
 - Document management with search (saved to localStorage)
@@ -35,12 +36,12 @@ A web-based invoicing and estimation tool for service businesses (construction, 
 ```
 invoice-template-app/
 ├── app/                        ← Next.js App Router
-│   ├── layout.jsx              ← Root layout — wraps all pages, imports globals.css
+│   ├── layout.jsx              ← Root layout — renders Navbar + sets body bg
 │   ├── page.jsx                ← / → redirects to /home
 │   ├── home/
 │   │   └── page.jsx            ← Document list + search
 │   ├── templates/
-│   │   ├── page.jsx            ← Industry selection
+│   │   ├── page.jsx            ← Industry selection (Select Industry)
 │   │   └── [industry]/
 │   │       └── page.jsx        ← Templates for a specific industry
 │   ├── editor/
@@ -50,10 +51,11 @@ invoice-template-app/
 │       └── page.jsx            ← Recently deleted (restore / delete forever)
 ├── src/
 │   ├── components/
-│   │   └── EstimateLayout.jsx  ← Reusable estimate layout component
+│   │   ├── Navbar.jsx          ← Global top nav — InvoiceFlow logo + blue icon
+│   │   └── EstimateLayout.jsx  ← (legacy, not currently used in editor)
 │   └── data/
 │       ├── docsStore.js        ← Document CRUD + soft delete + localStorage persistence
-│       └── templates.js        ← Template definitions (industries, types, defaults)
+│       └── templates.js        ← Template definitions (all 4 industries, estimate + invoice each)
 ├── globals.css                 ← Tailwind import + print styles + lined-textarea class
 ├── next.config.js
 ├── postcss.config.js
@@ -79,6 +81,9 @@ Dynamic segments use `useParams()` from `next/navigation`.
 
 ## Architecture
 
+### Layout + Navbar
+`app/layout.jsx` is the root server component. It renders `<Navbar />` (a client component at `src/components/Navbar.jsx`) above `{children}`. The body uses `flex flex-col min-h-screen bg-[#f5f6f8]`. Each page uses `flex-1` to fill the remaining space — **no page sets its own `min-h-screen` or background color**.
+
 ### Client Components
 All pages use `useState`, `useEffect`, and event handlers → all are marked `'use client'`. This is a Next.js requirement for interactive components.
 
@@ -100,6 +105,12 @@ Documents are never immediately destroyed. `softDeleteDoc()` stamps a `deletedAt
 - **Tailwind CSS only** — all styling via utility classes in JSX
 - **globals.css** — Tailwind import + print media queries + `.lined-textarea` custom class
 - No CSS Modules anywhere
+
+### Design System
+- **Primary color:** `#3b63f5` (blue) — used for CTA buttons, logo icon
+- **Background:** `#f5f6f8` (set on body in layout)
+- **Cards:** white `bg-white`, `border border-gray-200`, `rounded-xl` or `rounded-2xl`
+- **Typography:** `text-[#111]` headings, `text-gray-400` subtitles/metadata
 
 ### Print / PDF
 - `window.print()` triggers the browser print dialog
@@ -143,8 +154,6 @@ This project is **good for React learning**. It covers:
 ## Known TODOs / Planned Work
 
 - **Firebase integration** — Auth + Firestore for cloud sync and user accounts (already installed, not wired up)
-- **Invoice layout upgrade** — Proposal-style box header + client block + line items table
-- **More industry templates** — House Cleaning, Painting, Pest Control (currently "Coming soon")
 - **SEO** — Add metadata to each page via Next.js `generateMetadata`
 - **Ad integration** — Google AdSense or similar once public-facing
 - **Auto-empty trash** — Permanently delete items after 30 days
@@ -162,9 +171,20 @@ Document {
   client: { name, phone, email, address },
   job: { address, description },
   lineItems: [{ id, name, qty, rate }],
-  pricing: { totalCost },
+  pricing: { totalCost },  // estimate only — manual override total
   description, notes, terms,
   createdAt, lastEditedAt,
   deletedAt  // set by softDeleteDoc(); undefined on active docs
 }
 ```
+
+## Templates
+
+8 templates total — estimate + invoice for each industry:
+
+| Industry | Estimate ID | Invoice ID |
+|---|---|---|
+| Construction | `construction-estimate-v1` | `construction-invoice-v1` |
+| House Cleaning | `house-cleaning-estimate-v1` | `house-cleaning-invoice-v1` |
+| Painting | `painting-estimate-v1` | `painting-invoice-v1` |
+| Pest Control | `pest-control-estimate-v1` | `pest-control-invoice-v1` |

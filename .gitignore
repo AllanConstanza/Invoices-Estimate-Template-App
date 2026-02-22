@@ -5,9 +5,10 @@ out
 # Dependencies
 node_modules
 
-# Env (Firebase keys, secrets)
+# Env (Firebase keys — never commit real keys)
 .env
-.env.*
+.env.local
+.env.*.local
 
 # macOS
 .DS_Store
@@ -15,5 +16,5 @@ node_modules
 # Logs
 *.log
 
-# This file
-.gitignore
+
+CLAUDE.md
